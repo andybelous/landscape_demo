@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+dist/
+.env
+
+# Логи
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ОС
+.DS_Store
+Thumbs.db
+
+# WebStorm / IntelliJ IDEA
+.idea/
+
+# Vscode
+.vscode/
+
+# Файлы сборки и кеш
+.cache/
+.vercel
