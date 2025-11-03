@@ -5,6 +5,7 @@ import {
   CubeTextureLoader,
   TextureLoader,
   ClampToEdgeWrapping,
+  RepeatWrapping
 } from 'three'
 import './index.css'
 
@@ -35,15 +36,22 @@ function Scene({ cubemapUrls, groundTextureUrl }) {
   useEffect(() => {
     if (groundTexture) {
     // Не повторяем, просто растягиваем текстуру
-    groundTexture.wrapS = groundTexture.wrapT = ClampToEdgeWrapping
-    groundTexture.offset.set(0, 0)
-    groundTexture.repeat.set(1, 1)
+    // groundTexture.wrapS = groundTexture.wrapT = ClampToEdgeWrapping
+    // groundTexture.offset.set(0, 0)
+    // groundTexture.repeat.set(1, 1)
+
+  groundTexture.wrapS = groundTexture.wrapT = RepeatWrapping;
+  groundTexture.repeat.set(320,320); // например 4×4 повторения 
+
+
     }
   }, [groundTexture])
 
   return (
     <>
       <ambientLight intensity={0.6} />
+      <fog attach="fog" args={['#fcd28f', 10, 200]} />
+
       <directionalLight
         castShadow
         position={[5, 10, 7.5]}
@@ -62,11 +70,16 @@ function Scene({ cubemapUrls, groundTextureUrl }) {
 
       {/* Плоскость с выбранной текстурой */}
       <mesh rotation-x={-Math.PI / 2} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[40, 40]} />
+        <planeGeometry args={[1000, 1000]} />
         <meshStandardMaterial map={groundTexture} metalness={0} roughness={1} />
       </mesh>
 
-      <OrbitControls enableDamping dampingFactor={0.08} />
+      <OrbitControls
+      enableDamping dampingFactor={0.08}
+  enablePan={false}
+  maxPolarAngle={Math.PI / 2.2}
+  minPolarAngle={Math.PI / 4}
+/>
     </>
   )
 }
@@ -128,7 +141,7 @@ export default function R3FCubemapDemo() {
       </div>
 
       {/* --- Canvas --- */}
-      <Canvas shadows camera={{ position: [15, 15, 15], fov: 50 }}>
+      <Canvas shadows camera={{ position: [0, 15, 30], fov: 60 }}>
         <Scene cubemapUrls={cubemapUrls} groundTextureUrl={groundTextureUrl} />
       </Canvas>
     </div>
