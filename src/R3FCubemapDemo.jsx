@@ -120,7 +120,7 @@ function Scene({ cubemapUrls, groundTextureUrl }) {
       <directionalLight
         castShadow
         position={[5, 10, 7.5]}
-        intensity={1}
+        intensity={2}
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
