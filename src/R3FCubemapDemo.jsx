@@ -116,7 +116,7 @@ function Scene({ cubemapUrls, groundTextureUrl }) {
   return (
     <>
       <ambientLight intensity={0.6} />
-      <fog attach="fog" args={['#fcd28f', 10, 200]} />
+      <fog attach="fog" args={['#fcd28f', 200, 600]} />
       <directionalLight
         castShadow
         position={[5, 10, 7.5]}
