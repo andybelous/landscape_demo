@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect } from 'react'
-import { Canvas, useLoader, useThree } from '@react-three/fiber'
+import React, { useMemo, useEffect, useState, useRef } from 'react'
+import { Canvas, useLoader, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import {
   CubeTextureLoader,
@@ -10,7 +10,92 @@ import {
   LinearMipmapLinearFilter,
   LinearFilter
 } from 'three'
+import { Mesh, BoxGeometry, BackSide, DoubleSide, MeshBasicMaterial, SRGBColorSpace  } from 'three'
+import { GUI } from 'dat.gui'
+
 import './index.css'
+
+
+
+function Skybox({ urls, scale = 1000 }) {
+  const meshRef = useRef()
+  const { camera, scene } = useThree()
+  const zOffset = useRef(0)
+  const [materials, setMaterials] = useState(null)
+
+  useEffect(() => {
+    const loader = new TextureLoader()
+    let isMounted = true
+
+    Promise.all(urls.map((url) => new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject))))
+      .then((textures) => {
+        if (!isMounted) return
+
+        const mats = textures.map((tex) => {
+          // tex.magFilter = LinearFilter
+          // tex.minFilter = LinearMipmapLinearFilter
+          // tex.flipY = true
+          tex.needsUpdate = true
+
+          tex.colorSpace = SRGBColorSpace;
+          return new MeshBasicMaterial({
+            map: tex,
+            side: BackSide,
+            depthWrite: false,
+            fog: false, // 🚀 выключаем влияние тумана
+          })
+        })
+
+        setMaterials(mats)
+      })
+      .catch((err) => console.error('Skybox load error:', err))
+
+    // dat.GUI
+    const gui = new GUI()
+    const settings = { zOffset: 0 }
+    gui
+      .add(settings, 'zOffset', -500, 500, 0.1)
+      .name('Skybox Z Offset')
+      .onChange((val) => (zOffset.current = val))
+
+    return () => {
+      gui.destroy()
+      isMounted = false
+      if (meshRef.current) {
+        scene.remove(meshRef.current)
+        meshRef.current.geometry.dispose()
+        meshRef.current.material.forEach((m) => m.dispose())
+      }
+    }
+  }, [urls, scene])
+
+  // создаём куб, когда материалы загружены
+  useEffect(() => {
+    if (!materials) return
+
+    const geometry = new BoxGeometry(1, 1, 1)
+    const mesh = new Mesh(geometry, materials)
+    mesh.scale.setScalar(scale)
+    scene.add(mesh)
+    meshRef.current = mesh
+
+    return () => {
+      scene.remove(mesh)
+      geometry.dispose()
+      materials.forEach((m) => m.dispose())
+    }
+  }, [materials, scale, scene])
+
+  // следим за камерой и добавляем смещение по Z
+  useFrame(() => {
+    if (meshRef.current) {
+      meshRef.current.position.copy(camera.position)
+      meshRef.current.position.z += zOffset.current
+    }
+  })
+
+  return null
+}
 
 
 
@@ -125,7 +210,7 @@ function Scene({ cubemapUrls, groundTextureUrl }) {
         shadow-mapSize-height={2048}
       />
 
-      <CubeBackground urls={cubemapUrls} />
+      <Skybox urls={cubemapUrls} position={[0, 500, 0]} />
 
       <mesh position={[0, 1, 0]} castShadow>
         <sphereGeometry args={[1, 32, 32]} />
@@ -166,7 +251,7 @@ export default function R3FCubemapDemo() {
 
   return (
     <div id="canvas-container">
-      <div className="menu" style={{ top: '20px', left: '20px' }}>
+      <div className="menu" style={{ top: '300px', right: '20px' }}>
         <h3>Scenery</h3>
         {['cubemap1','cubemap2','cubemap3','cubemap4','cubemap5'].map(name => (
           <label key={name} style={{ display: 'block', margin: '5px 0' }}>
@@ -179,7 +264,7 @@ export default function R3FCubemapDemo() {
         ))}
       </div>
 
-      <div className="menu" style={{ top: '20px', right: '20px' }}>
+      <div className="menu" style={{ top: '60px', right: '20px' }}>
         <h3>Landscape</h3>
         {['ground1','ground2','ground3','ground4','ground5'].map(name => (
           <label key={name} style={{ display: 'block', margin: '5px 0' }}>
